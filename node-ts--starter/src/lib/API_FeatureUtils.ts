@@ -30,16 +30,11 @@ class API_FeatureUtils {
       )
     );
 
-    const queryObject: {
-      [key: string]:
-        | string
-        | Array<string>
-        | number
-        | {
-            [key: string]: string | Array<string> | number;
-          }
-        | Array<{ [key: string]: string | { [key: string]: string } }>;
-    } = {};
+    const queryObject: { [key: string]: any } = {};
+
+    for (const [key, value] of Object.entries(convertedFilter)) {
+      queryObject[key] = value;
+    }
 
     return queryObject;
   }
@@ -47,11 +42,21 @@ class API_FeatureUtils {
   getAggregationSortQueryObject(): Record<string, 1 | -1> {
     const sortQuery = this.query.sort as string;
 
-    return sortQuery
-      ? {
-          [sortQuery.replace("-", "")]: sortQuery.startsWith("-") ? -1 : 1,
-        }
-      : { createdAt: -1 };
+    const sortObject: { [key: string]: 1 | -1 } = {};
+
+    const sortFragments = sortQuery?.split(",") || [];
+
+    if (sortFragments.length > 0) {
+      sortFragments.forEach((fragment) => {
+        sortObject[fragment.replace("-", "")] = fragment.startsWith("-")
+          ? -1
+          : 1;
+      });
+    } else {
+      sortObject.createdAt = -1;
+    }
+
+    return sortObject;
   }
 
   getPaginationInfo(max?: number) {

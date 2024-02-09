@@ -14,8 +14,9 @@ import {
   SendForgotPasswordPinArgsT,
   SendWelcomeArgsT,
 } from "../types/lib/email.types";
-import nodemailer from "nodemailer";
+import nodemailer, { Transporter } from "nodemailer";
 import pug from "pug";
+import path from "path";
 
 export class Email {
   MAILER_SERVICE: string = "";
@@ -23,28 +24,36 @@ export class Email {
   MAILER_PORT: number = NaN;
   MAILER_USERNAME: string = "";
   MAILER_PASSWORD: string = "";
+  SECURE: boolean = false;
+  IS_PROD: boolean = false;
 
   constructor() {
     const IS_PROD = NODE_MODE === "PROD";
 
+    this.IS_PROD = IS_PROD;
     this.MAILER_HOST = IS_PROD ? EMAIL_HOST : MAILTRAP_HOST;
     this.MAILER_PORT = IS_PROD ? +EMAIL_PORT : +MAILTRAP_PORT;
     this.MAILER_USERNAME = IS_PROD ? EMAIL_USERNAME : MAILTRAP_USERNAME;
     this.MAILER_PASSWORD = IS_PROD ? EMAIL_PASSWORD : MAILTRAP_PASSWORD;
+    this.SECURE = IS_PROD ? true : false;
 
     if (IS_PROD) this.MAILER_SERVICE = EMAIL_SERVICE;
   }
 
-  transporter() {
-    return nodemailer.createTransport({
+  transporter(): Transporter {
+    const transportConfig: any = {
       host: this.MAILER_HOST!,
       port: this.MAILER_PORT,
-      secure: false,
+      secure: this.SECURE,
       auth: {
         user: this.MAILER_USERNAME,
         pass: this.MAILER_PASSWORD,
       },
-    });
+    };
+
+    if (this.IS_PROD) transportConfig.service = EMAIL_SERVICE;
+
+    return nodemailer.createTransport(transportConfig);
   }
 
   async sendWelcome(args: SendWelcomeArgsT) {
@@ -100,7 +109,7 @@ export class Email {
 
   // UTILS
   generateDirPath(filename: string) {
-    return `${__dirname}/../views/${filename}.pug`;
+    return path.resolve(__dirname, "..", "views", `${filename}.pug`);
   }
 
   generateUppercaseUsername(username: string) {

@@ -21,6 +21,14 @@ class API_Features<
     this.query = query;
   }
 
+  sort(sort?: string | { [key: string]: 1 | -1 }) {
+    const sortQuery = (this.query.sort as string) || sort || "-createdAt";
+
+    this.dbQuery = this.dbQuery.sort(sortQuery);
+
+    return this;
+  }
+
   paginate(max?: number) {
     const { currentPage, limit, skip } = this.getPaginationInfo(max);
 
@@ -34,13 +42,10 @@ class API_Features<
   filter() {
     const queryObject = this.getQueryObject([], []);
 
-    this.dbQuery = this.dbQuery.find(queryObject) as any;
+    const query: { [key: string]: any } = {};
 
-    return this;
-  }
-
-  sort(sort: { [key: string]: 1 | -1 }) {
-    this.dbQuery = this.dbQuery.sort(sort);
+    this.dbQuery = this.dbQuery.find(query) as any;
+    this.dbQueryClone = this.dbQueryClone.find(query) as any;
 
     return this;
   }
